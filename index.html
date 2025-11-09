@@ -455,6 +455,8 @@
                     <input type="number" id="time" value="0" min="0" step="0.01" oninput="calculateHitFactor()">
                 </div>
 
+                <button onclick="clearCalculator()" style="width: 100%; padding: 12px; margin: 20px 0; background: #d32f2f; color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer;">Clear All Inputs</button>
+
                 <div class="result-box">
                     <div class="result-label">Total Points</div>
                     <div class="result-value" id="totalPoints">0</div>
@@ -473,7 +475,7 @@
                 <h2 class="section-title">Competitor Information</h2>
                 <div class="input-group">
                     <label>Competitor Hit Factor</label>
-                    <input type="number" id="compHF" value="0" step="0.0001" oninput="calculateComparison()">
+                    <input type="number" id="compHF" value="0" step="0.0001" oninput="syncHitFactor('comparison'); calculateComparison()">
                 </div>
 
                 <h2 class="section-title">Stage Information</h2>
@@ -494,6 +496,17 @@
                 <div class="input-group">
                     <label>Normal Split Time (seconds)</label>
                     <input type="number" id="normalSplit" value="0.20" step="0.01" min="0" oninput="calculateComparison()">
+                    <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
+                        Used for Option A (aiming center with minimal slowdown)
+                    </span>
+                </div>
+
+                <div class="input-group">
+                    <label>Slow/Careful Split Time (seconds)</label>
+                    <input type="number" id="slowSplit" value="0.50" step="0.01" min="0" oninput="calculateComparison()">
+                    <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
+                        Used for Option B (carefully aiming for A-zones near no-shoot)
+                    </span>
                 </div>
 
                 <h2 class="section-title">No-Shoot Strategy</h2>
@@ -501,6 +514,8 @@
                     <label>Partially Covered Targets (with no-shoots)</label>
                     <input type="number" id="partiallyCovered" value="0" min="0" oninput="calculateComparison()">
                 </div>
+
+                <button onclick="clearComparison()" style="width: 100%; padding: 12px; margin: 20px 0; background: #d32f2f; color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer;">Clear All Inputs</button>
 
                 <div id="mistakeCosts"></div>
 
@@ -523,7 +538,7 @@
                 <h2 class="section-title">Stage Information</h2>
                 <div class="input-group">
                     <label>Current High Hit Factor</label>
-                    <input type="number" id="highHitFactor" value="0" step="0.0001" oninput="calculateStrategy()">
+                    <input type="number" id="highHitFactor" value="0" step="0.0001" oninput="syncHitFactor('strategy'); calculateStrategy()">
                 </div>
 
                 <div class="input-group">
@@ -559,7 +574,15 @@
                     <label>Your Normal Split Time (seconds)</label>
                     <input type="number" id="strategySplitTime" value="0.20" step="0.01" min="0" oninput="calculateStrategy()">
                     <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
-                        For no-shoot strategy analysis
+                        Used for Option A (aiming center with minimal slowdown)
+                    </span>
+                </div>
+
+                <div class="input-group">
+                    <label>Your Slow/Careful Split Time (seconds)</label>
+                    <input type="number" id="strategySlowSplitTime" value="0.50" step="0.01" min="0" oninput="calculateStrategy()">
+                    <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
+                        Used for Option B (carefully aiming for A-zones near no-shoot)
                     </span>
                 </div>
 
@@ -568,6 +591,8 @@
                     <button class="pf-button" onclick="setStrategyPowerFactor('major')">Major</button>
                     <button class="pf-button active" onclick="setStrategyPowerFactor('minor')">Minor</button>
                 </div>
+
+                <button onclick="clearStrategy()" style="width: 100%; padding: 12px; margin: 20px 0; background: #d32f2f; color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer;">Clear All Inputs</button>
 
                 <div id="strategyResults"></div>
 
@@ -663,6 +688,7 @@
             const compHF = parseFloat(document.getElementById('compHF').value) || 0;
             const stageMaxPoints = parseInt(document.getElementById('stageMaxPoints').value) || 0;
             const normalSplit = parseFloat(document.getElementById('normalSplit').value) || 0.20;
+            const slowSplit = parseFloat(document.getElementById('slowSplit').value) || 0.50;
             const partiallyCovered = parseInt(document.getElementById('partiallyCovered').value) || 0;
 
             // Calculate and display target time to beat
@@ -693,8 +719,8 @@
             const cPoints = compPowerFactor === 'major' ? 4 : 3;
             const dPoints = compPowerFactor === 'major' ? 2 : 1;
 
-            // Calculate estimated careful aim time (2-3x normal split)
-            const carefulSplit = normalSplit * 2.5;
+            // Use user-provided slow split time
+            const carefulSplit = slowSplit;
             const extraAimTime = carefulSplit - normalSplit;
 
             // Option A: Aim center (50/50 chance of A vs C based on perforation location)
@@ -947,7 +973,8 @@
             // Calculate partially covered targets strategy
             const strategyPartiallyCovered = parseInt(document.getElementById('strategyPartiallyCovered').value) || 0;
             const strategySplitTime = parseFloat(document.getElementById('strategySplitTime').value) || 0.20;
-            const carefulSplit = strategySplitTime * 2.5;
+            const strategySlowSplitTime = parseFloat(document.getElementById('strategySlowSplitTime').value) || 0.50;
+            const carefulSplit = strategySlowSplitTime; // Use the user-provided slow split time
             const extraAimTime = carefulSplit - strategySplitTime;
 
             let html = `
@@ -1013,6 +1040,7 @@
             if (noPenaltyCount > 0) {
                 const recommendationIcon = shouldEngageNoPenalty ? '✅' : '❌';
                 const recommendationClass = shouldEngageNoPenalty ? 'engage' : 'skip';
+                const recommendationBg = shouldEngageNoPenalty ? '#4caf50' : '#f44336';
                 const recommendationTitle = shouldEngageNoPenalty ? 'ENGAGE TARGETS' : 'SKIP TARGETS';
                 const recommendationText = shouldEngageNoPenalty ?
                     'Worth engaging - time cost is less than point value' :
@@ -1021,6 +1049,15 @@
                 html += `
                     <h2 class="section-title" style="margin-top: 20px;">🎯 No-Penalty Target Strategy</h2>
                     <div class="no-penalty-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 15px; padding: 20px; color: white; margin-top: 15px;">
+                        <div style="background: ${recommendationBg}; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 2.5em;">${recommendationIcon}</div>
+                                <div>
+                                    <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 5px;">${recommendationTitle}</div>
+                                    <div style="font-size: 1em; opacity: 0.95;">${recommendationText}</div>
+                                </div>
+                            </div>
+                        </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <div>
                                 <div style="font-size: 0.9em; opacity: 0.9;">Targets</div>
@@ -1041,15 +1078,6 @@
                                 <div style="font-size: 1.8em; font-weight: bold;">${noPenaltyTimeValue.toFixed(2)} sec</div>
                             </div>
                         </div>
-                        <div style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; margin-top: 15px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="font-size: 2em;">${recommendationIcon}</div>
-                                <div>
-                                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 5px;">${recommendationTitle}</div>
-                                    <div style="font-size: 0.95em; opacity: 0.95;">${recommendationText}</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 `;
             }
@@ -1067,40 +1095,67 @@
                 // Option B: Chase A-zones (guaranteed 10 points if executed perfectly)
                 const optionBPoints = 10;
 
+                // Calculate per-target values (same for all targets)
+                const optionAPoints = optionAExpected;
+                const optionATime = (strategySplitTime + optionASlowdown) * 2;
+
+                const optionBPointsTarget = optionBPoints;
+                const optionBTime = carefulSplit * 2;
+
+                const optionAValue = optionAPoints / hhf;
+                const optionBValue = optionBPointsTarget / hhf;
+
+                const timeDiff = optionBTime - optionATime; // Extra time needed for Option B
+                const pointDiff = optionBPointsTarget - optionAPoints;
+                const pointDiffValue = pointDiff / hhf;
+
+                const netTimeGain = pointDiffValue - timeDiff;
+                const noShootPenaltyValue = noshootPenalty / hhf;
+
+                // Calculate total stage impact
+                const totalNetTimeGain = netTimeGain * strategyPartiallyCovered;
+                const totalNoShootRisk = noShootPenaltyValue * strategyPartiallyCovered;
+
+                // Smart recommendation (calculate first, display after title)
+                const riskThreshold = 0.5;
+                let recIcon, recTitle, recText, recBg;
+
+                if (totalNetTimeGain > totalNoShootRisk * riskThreshold) {
+                    recIcon = '🎯';
+                    recTitle = 'Chase A-Zones';
+                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) significantly exceeds no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Worth the calculated risk to aim for A-zones.`;
+                    recBg = '#4caf50'; // Green
+                } else if (totalNetTimeGain > 0) {
+                    recIcon = '⚖️';
+                    recTitle = 'Balanced Approach';
+                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) is positive but modest vs no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Use your confidence level: chase A-zones if feeling sharp, aim center if cautious.`;
+                    recBg = '#ff9800'; // Orange
+                } else {
+                    recIcon = '🛡️';
+                    recTitle = 'Aim Center (Safer)';
+                    recText = `Negative net time gain (${totalNetTimeGain.toFixed(2)}s) means aiming center is both safer AND faster. Clear choice to avoid no-shoot risk.`;
+                    recBg = '#2196f3'; // Blue
+                }
+
                 html += `
                     <div style="background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%); padding: 20px; border-radius: 12px; margin-top: 15px;">
                         <h4 style="margin-top: 0; color: white; font-size: 1.3em;">⚠️ Partially Covered Targets (No-Shoot Strategy)</h4>
                         <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px; line-height: 1.5;">
                             ${strategyPartiallyCovered} target${strategyPartiallyCovered !== 1 ? 's have' : ' has'} no-shoots partially covering them. Choose your approach:
                         </p>
-                `;
 
-                let totalNetTimeGain = 0;
-                let totalNoShootRisk = 0;
+                        <div style="background: ${recBg}; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 2.5em;">${recIcon}</div>
+                                <div>
+                                    <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 5px; color: white;">${recTitle}</div>
+                                    <div style="font-size: 1em; opacity: 0.95; color: white;">${recText}</div>
+                                </div>
+                            </div>
+                        </div>
 
-                for (let targetNum = 1; targetNum <= strategyPartiallyCovered; targetNum++) {
-                    const optionAPoints = optionAExpected;
-                    const optionATime = (strategySplitTime + optionASlowdown) * 2;
-
-                    const optionBPointsTarget = optionBPoints;
-                    const optionBTime = carefulSplit * 2;
-
-                    const optionAValue = optionAPoints / hhf;
-                    const optionBValue = optionBPointsTarget / hhf;
-
-                    const timeDiff = optionBTime - optionATime; // Extra time needed for Option B
-                    const pointDiff = optionBPointsTarget - optionAPoints;
-                    const pointDiffValue = pointDiff / hhf;
-
-                    const netTimeGain = pointDiffValue - timeDiff;
-                    totalNetTimeGain += netTimeGain;
-
-                    const noShootPenaltyValue = noshootPenalty / hhf;
-                    totalNoShootRisk += noShootPenaltyValue;
-
-                    html += `
-                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: ${targetNum < strategyPartiallyCovered ? '15px' : '0'};">
-                            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 12px; color: white;">Target ${targetNum}</div>
+                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 12px; color: white;">Per-Target Analysis</div>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
                                 <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 6px;">
@@ -1136,7 +1191,7 @@
 
                             <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 6px; border-left: 4px solid ${netTimeGain > 0 ? '#32CD32' : '#FF6347'};">
                                 <div style="font-weight: bold; margin-bottom: 8px; color: white;">
-                                    ${netTimeGain > 0 ? '✓' : '✗'} Net Time Analysis
+                                    ${netTimeGain > 0 ? '✓' : '✗'} Net Time Analysis (per target)
                                 </div>
                                 <div style="color: rgba(255,255,255,0.9); margin-bottom: 6px;">
                                     Extra time needed: ${timeDiff.toFixed(2)}s
@@ -1152,8 +1207,7 @@
                                 </div>
                             </div>
                         </div>
-                    `;
-                }
+                `;
 
                 // Total stage impact
                 html += `
@@ -1170,41 +1224,95 @@
                             </span>
                         </div>
                     </div>
-                `;
-
-                // Smart recommendation
-                const riskThreshold = 0.5;
-                let recIcon, recTitle, recText;
-
-                if (totalNetTimeGain > totalNoShootRisk * riskThreshold) {
-                    recIcon = '🎯';
-                    recTitle = 'Chase A-Zones';
-                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) significantly exceeds no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Worth the calculated risk to aim for A-zones.`;
-                } else if (totalNetTimeGain > 0) {
-                    recIcon = '⚖️';
-                    recTitle = 'Balanced Approach';
-                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) is positive but modest vs no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Use your confidence level: chase A-zones if feeling sharp, aim center if cautious.`;
-                } else {
-                    recIcon = '🛡️';
-                    recTitle = 'Aim Center (Safer)';
-                    recText = `Negative net time gain (${totalNetTimeGain.toFixed(2)}s) means aiming center is both safer AND faster. Clear choice to avoid no-shoot risk.`;
-                }
-
-                html += `
-                    <div style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; margin-top: 15px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 2em;">${recIcon}</div>
-                            <div>
-                                <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 5px; color: white;">${recTitle}</div>
-                                <div style="font-size: 0.95em; opacity: 0.95; color: rgba(255,255,255,0.9);">${recText}</div>
-                            </div>
-                        </div>
                     </div>
-                </div>
                 `;
             }
 
             document.getElementById('strategyResults').innerHTML = html;
+        }
+
+        // Sync hit factor between Comparison and Strategy tabs
+        function syncHitFactor(source) {
+            if (source === 'comparison') {
+                // Copy from Comparison to Strategy
+                const compHF = document.getElementById('compHF').value;
+                document.getElementById('highHitFactor').value = compHF;
+            } else if (source === 'strategy') {
+                // Copy from Strategy to Comparison
+                const highHF = document.getElementById('highHitFactor').value;
+                document.getElementById('compHF').value = highHF;
+            }
+        }
+
+        // Clear all inputs on Calculator tab
+        function clearCalculator() {
+            // Reset all inputs to default values
+            document.getElementById('aZone').value = '0';
+            document.getElementById('cZone').value = '0';
+            document.getElementById('dZone').value = '0';
+            document.getElementById('steel').value = '0';
+            document.getElementById('misses').value = '0';
+            document.getElementById('noShoots').value = '0';
+            document.getElementById('procedurals').value = '0';
+            document.getElementById('time').value = '0';
+
+            // Reset power factor to Minor
+            currentPowerFactor = 'minor';
+            document.querySelectorAll('#calculator .pf-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('#calculator .pf-button')[1].classList.add('active'); // Minor button
+
+            // Recalculate to clear results
+            calculateHitFactor();
+        }
+
+        // Clear all inputs on Comparison tab
+        function clearComparison() {
+            // Reset all inputs to default values
+            document.getElementById('compHF').value = '0';
+            document.getElementById('stageMaxPoints').value = '0';
+            document.getElementById('normalSplit').value = '0.20';
+            document.getElementById('slowSplit').value = '0.50';
+            document.getElementById('partiallyCovered').value = '0';
+
+            // Reset power factor to Minor
+            compPowerFactor = 'minor';
+            document.querySelectorAll('#comparison .pf-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('#comparison .pf-button')[1].classList.add('active'); // Minor button
+
+            // Sync to Strategy tab (clear it too)
+            document.getElementById('highHitFactor').value = '0';
+
+            // Recalculate to clear results
+            calculateComparison();
+        }
+
+        // Clear all inputs on Strategy tab
+        function clearStrategy() {
+            // Reset all inputs to default values
+            document.getElementById('highHitFactor').value = '0';
+            document.getElementById('stageRoundCount').value = '0';
+            document.getElementById('noPenaltyTargets').value = '0';
+            document.getElementById('hitsPerTarget').value = '2';
+            document.getElementById('strategyPartiallyCovered').value = '0';
+            document.getElementById('strategySplitTime').value = '0.20';
+            document.getElementById('strategySlowSplitTime').value = '0.50';
+
+            // Reset power factor to Minor
+            strategyPowerFactor = 'minor';
+            document.querySelectorAll('#strategy .pf-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('#strategy .pf-button')[1].classList.add('active'); // Minor button
+
+            // Sync to Comparison tab (clear it too)
+            document.getElementById('compHF').value = '0';
+
+            // Recalculate to clear results
+            calculateStrategy();
         }
     </script>
 </body>
