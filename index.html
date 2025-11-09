@@ -492,29 +492,6 @@
                     <button class="pf-button active" onclick="setCompPowerFactor('minor')">Minor</button>
                 </div>
 
-                <h2 class="section-title">Your Split Time (Optional)</h2>
-                <div class="input-group">
-                    <label>Normal Split Time (seconds)</label>
-                    <input type="number" id="normalSplit" value="0.20" step="0.01" min="0" oninput="calculateComparison()">
-                    <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
-                        Used for Option A (aiming center with minimal slowdown)
-                    </span>
-                </div>
-
-                <div class="input-group">
-                    <label>Slow/Careful Split Time (seconds)</label>
-                    <input type="number" id="slowSplit" value="0.50" step="0.01" min="0" oninput="calculateComparison()">
-                    <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
-                        Used for Option B (carefully aiming for A-zones near no-shoot)
-                    </span>
-                </div>
-
-                <h2 class="section-title">No-Shoot Strategy</h2>
-                <div class="input-group">
-                    <label>Partially Covered Targets (with no-shoots)</label>
-                    <input type="number" id="partiallyCovered" value="0" min="0" oninput="calculateComparison()">
-                </div>
-
                 <button onclick="clearComparison()" style="width: 100%; padding: 12px; margin: 20px 0; background: #d32f2f; color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer;">Clear All Inputs</button>
 
                 <div id="mistakeCosts"></div>
@@ -695,9 +672,6 @@
         function calculateComparison() {
             const compHF = parseFloat(document.getElementById('compHF').value) || 0;
             const stageMaxPoints = parseInt(document.getElementById('stageMaxPoints').value) || 0;
-            const normalSplit = parseFloat(document.getElementById('normalSplit').value) || 0.20;
-            const slowSplit = parseFloat(document.getElementById('slowSplit').value) || 0.50;
-            const partiallyCovered = parseInt(document.getElementById('partiallyCovered').value) || 0;
 
             // Calculate and display target time to beat
             if (compHF > 0 && stageMaxPoints > 0) {
@@ -726,16 +700,6 @@
 
             const cPoints = compPowerFactor === 'major' ? 4 : 3;
             const dPoints = compPowerFactor === 'major' ? 2 : 1;
-
-            // Use user-provided slow split time
-            const carefulSplit = slowSplit;
-            const extraAimTime = carefulSplit - normalSplit;
-
-            // Option A: Aim center (50/50 chance of A vs C based on perforation location)
-            // Expected value: average of best case (2 A-zones = 10) and worst case (2 C-zones = 8 or 6)
-            const optionAExpected = compPowerFactor === 'major' ? 9 : 8; // (10 + 8)/2 or (10 + 6)/2
-            const optionASlowdown = 0.05; // Minimal slowdown vs normal split
-            const pointLossPerTarget = 10 - optionAExpected; // 1 pt (Major) or 2 pts (Minor)
 
             const mistakes = [
                 {
@@ -805,101 +769,6 @@
                     <p><strong>Avoiding a Mike:</strong> If slowing down by ${(15 / compHF).toFixed(2)} seconds would prevent a mike and secure the A-zone hit, you'll maintain the same performance as your competitor.</p>
                     <p>Taking more time than this would hurt your score; less time means you're beating them!</p>
                 </div>
-
-                ${partiallyCovered > 0 ? `
-                    <div class="info-box" style="margin-top: 20px; background: #fff3cd; border-left-color: #ffc107;">
-                        <h3>⚠️ No-Shoot Strategy for ${partiallyCovered} Target${partiallyCovered === 1 ? '' : 's'}</h3>
-                        <p><strong>Based on your ${normalSplit.toFixed(2)}s splits and ${partiallyCovered} partially covered target${partiallyCovered === 1 ? '' : 's'}:</strong></p>
-
-                        <div style="background: white; padding: 12px; border-radius: 8px; margin: 12px 0;">
-                            <p style="margin: 0; color: #333;"><strong>Your Normal Split:</strong> ${normalSplit.toFixed(2)}s (open target)</p>
-                            <p style="margin: 8px 0 0 0; color: #333;"><strong>Estimated Careful Split:</strong> ${carefulSplit.toFixed(2)}s (avoiding no-shoot)</p>
-                            <p style="margin: 8px 0 0 0; color: #333;"><strong>Extra Time Cost:</strong> +${extraAimTime.toFixed(2)}s per shot</p>
-                        </div>
-
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 12px 0;">
-                            <h4 style="margin: 0 0 12px 0; color: #333;">Per Target Analysis</h4>
-                            <p style="margin: 0; color: #333;"><strong>Option A (Aim Center of Visible Area)</strong> <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-left: 8px;">SAFER</span></p>
-                            <ul style="margin: 8px 0 0 20px; padding: 0; color: #666;">
-                                <li><strong>Strategy:</strong> Aim for center of visible target area (away from no-shoot edge)</li>
-                                <li><strong>Time:</strong> Minimal slowdown (~${(normalSplit + 0.05).toFixed(2)}s splits)</li>
-                                <li><strong>No-shoot risk:</strong> <span style="color: #28a745; font-weight: 600;">LOW</span> - aiming away from no-shoot</li>
-                                <li><strong>Scoring:</strong> Accept whatever zone is centered - could be C-zone, could be A-zone if center lands on perforation (50/50)</li>
-                                <li><strong>Expected points:</strong> ${optionAExpected} pts (avg of 10 and ${cPoints * 2})</li>
-                                <li><strong>Expected point cost:</strong> ${pointLossPerTarget} pt${pointLossPerTarget === 1 ? '' : 's'} per target = +${(pointLossPerTarget / compHF).toFixed(2)}s</li>
-                                <li style="color: #28a745; font-weight: 600;"><strong>Trade-off:</strong> Slightly lower points on average, but fast & safe from no-shoots</li>
-                            </ul>
-
-                            <p style="margin: 16px 0 0 0; color: #333;"><strong>Option B (Chase A-zones)</strong> <span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-left: 8px;">RISKIER</span></p>
-                            <ul style="margin: 8px 0 0 20px; padding: 0; color: #666;">
-                                <li><strong>Strategy:</strong> Aim precisely for visible A-zone portions (often near no-shoot edge)</li>
-                                <li><strong>Time:</strong> Significant slowdown (${carefulSplit.toFixed(2)}s splits = +${(extraAimTime * 2).toFixed(2)}s per target)</li>
-                                <li><strong>No-shoot risk:</strong> <span style="color: #dc3545; font-weight: 600;">HIGHER</span> - A-zone is often right next to no-shoot</li>
-                                <li><strong>Scoring:</strong> Full A-zone points IF you execute perfectly</li>
-                                <li style="color: #dc3545; font-weight: 600;"><strong>Trade-off:</strong> Slower + higher risk of clipping no-shoot (-10 pts = +${(10 / compHF).toFixed(2)}s)</li>
-                            </ul>
-                        </div>
-
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 8px; margin: 12px 0; color: white;">
-                            <h4 style="margin: 0 0 12px 0;">TOTAL STAGE IMPACT (${partiallyCovered} target${partiallyCovered === 1 ? '' : 's'})</h4>
-                            <p style="margin: 0;"><strong>Option A (Aim Center - Expected ${optionAExpected} pts avg):</strong></p>
-                            <ul style="margin: 8px 0 0 20px; padding: 0;">
-                                <li>Time saved by not slowing much: ${((extraAimTime * 2 - optionASlowdown * 2) * partiallyCovered).toFixed(2)}s</li>
-                                <li>Time lost from ${pointLossPerTarget} pt${pointLossPerTarget === 1 ? '' : 's'} per target: ${((pointLossPerTarget / compHF) * partiallyCovered).toFixed(2)}s</li>
-                                <li style="font-weight: 600; font-size: 1.1em;">Net gain: ${(((extraAimTime * 2 - optionASlowdown * 2) * partiallyCovered) - ((pointLossPerTarget / compHF) * partiallyCovered)).toFixed(2)}s (if NO no-shoots)</li>
-                                <li style="color: #ffc107;">BUT: Just ONE no-shoot (+${(10 / compHF).toFixed(2)}s) could wipe out these gains!</li>
-                            </ul>
-                            <p style="margin: 12px 0 0 0;"><strong>Option B (Chase A-zones - Guaranteed 10 pts):</strong></p>
-                            <ul style="margin: 8px 0 0 20px; padding: 0;">
-                                <li>Extra time: +${(extraAimTime * 2 * partiallyCovered).toFixed(2)}s total</li>
-                                <li>Guaranteed: Full A-zone points (no scoring variance)</li>
-                                <li style="font-weight: 600;">Consistent, predictable scoring with virtually zero no-shoot risk if careful</li>
-                            </ul>
-                        </div>
-
-                        ${(() => {
-                            // Updated calculation using realistic 50/50 expected value
-                            const optionATime = (normalSplit + optionASlowdown) * 2; // Per target
-                            const optionBTime = carefulSplit * 2; // Per target
-                            const timeDiff = optionBTime - optionATime; // Extra time for Option B
-                            const pointDiff = pointLossPerTarget; // Point advantage of Option B
-                            const pointDiffValue = pointDiff / compHF; // Time value of point advantage
-
-                            const netGainPerTarget = pointDiffValue - timeDiff; // Negative = Option B costs more time than points are worth
-                            const totalNetGain = netGainPerTarget * partiallyCovered;
-                            const noShootPenalty = 10 / compHF;
-
-                            if (netGainPerTarget > 0 && totalNetGain > noShootPenalty) {
-                                return `
-                                    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 12px; margin-top: 12px; border-radius: 4px;">
-                                        <p style="margin: 0; color: #155724; font-weight: 600;">✓ LEAN TOWARD OPTION A (Aim Center)</p>
-                                        <p style="margin: 8px 0 0 0; color: #155724;">Option A saves ${totalNetGain.toFixed(2)}s total AND has lower no-shoot risk. Even if you hit one no-shoot with Option B (which is riskier), you'd lose ${noShootPenalty.toFixed(2)}s on top of being slower. Option A is faster and safer.</p>
-                                    </div>
-                                `;
-                            } else if (netGainPerTarget > 0 && totalNetGain > 0) {
-                                return `
-                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-top: 12px; border-radius: 4px;">
-                                        <p style="margin: 0; color: #856404; font-weight: 600;">⚖️ TOUGH CALL - Slight Edge to Option A</p>
-                                        <p style="margin: 8px 0 0 0; color: #856404;">Option A saves ${totalNetGain.toFixed(2)}s and has lower no-shoot risk. Option B gives full points but is slower and riskier. If you're extremely confident in your precision near no-shoots, Option B might work, but Option A is safer.</p>
-                                    </div>
-                                `;
-                            } else {
-                                return `
-                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-top: 12px; border-radius: 4px;">
-                                        <p style="margin: 0; color: #856404; font-weight: 600;">⚠️ CONSIDER OPTION B (Chase A-zones)</p>
-                                        <p style="margin: 8px 0 0 0; color: #856404;">Option A's point loss (${Math.abs(totalNetGain).toFixed(2)}s) nearly equals the time saved. If you can handle the extra slowdown and are confident with precision shots near no-shoots, Option B might be worth it. But remember: Option B has higher no-shoot risk!</p>
-                                    </div>
-                                `;
-                            }
-                        })()}
-                    </div>
-                ` : `
-                    <div class="info-box" style="margin-top: 20px; background: #fff3cd; border-left-color: #ffc107;">
-                        <h3>⚠️ No-Shoot Strategy</h3>
-                        <p><strong>Enter the number of partially covered targets above to see stage-specific strategy recommendations.</strong></p>
-                        <p style="margin-top: 8px; color: #666;">The calculator will show you the total time impact of going safe vs. risky across all difficult targets on the stage.</p>
-                    </div>
-                `}
             `;
 
             document.getElementById('mistakeCosts').innerHTML = html;
@@ -1361,9 +1230,6 @@
             // Reset all inputs to default values
             document.getElementById('compHF').value = '0';
             document.getElementById('stageMaxPoints').value = '0';
-            document.getElementById('normalSplit').value = '0.20';
-            document.getElementById('slowSplit').value = '0.50';
-            document.getElementById('partiallyCovered').value = '0';
 
             // Reset power factor to Minor
             compPowerFactor = 'minor';
