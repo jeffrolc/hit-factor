@@ -555,10 +555,18 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Hits per Target</label>
+                    <label>Hits per Paper Target</label>
                     <input type="number" id="hitsPerTarget" value="2" min="1" oninput="calculateStrategy()">
                     <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
-                        Required hits per no-penalty target
+                        Required hits per no-penalty paper target (steel is always 1 hit)
+                    </span>
+                </div>
+
+                <div class="input-group">
+                    <label>Steel Targets (Optional)</label>
+                    <input type="number" id="strategySteelTargets" value="0" min="0" oninput="calculateStrategy()">
+                    <span style="color: #888; font-size: 0.9em; display: block; margin-top: 5px;">
+                        Number of steel targets (1 hit = 5 points each)
                     </span>
                 </div>
 
@@ -970,12 +978,60 @@
             const estimatedEngageTime = 0.5 + (totalHits * 0.3); // Base transition + per-shot time
             const shouldEngageNoPenalty = estimatedEngageTime < noPenaltyTimeValue;
 
+            // Calculate steel target strategy
+            const steelCount = parseInt(document.getElementById('strategySteelTargets').value) || 0;
+            const steelPoints = steelCount * 5; // 1 hit = 5 points per steel
+            const steelTimeValue = steelPoints / hhf;
+            const estimatedSteelTime = 0.5 + (steelCount * 0.35); // Base transition + ~0.35s per steel (slower than paper)
+
             // Calculate partially covered targets strategy
             const strategyPartiallyCovered = parseInt(document.getElementById('strategyPartiallyCovered').value) || 0;
             const strategySplitTime = parseFloat(document.getElementById('strategySplitTime').value) || 0.20;
             const strategySlowSplitTime = parseFloat(document.getElementById('strategySlowSplitTime').value) || 0.50;
             const carefulSplit = strategySlowSplitTime; // Use the user-provided slow split time
             const extraAimTime = carefulSplit - strategySplitTime;
+
+            // Validate total rounds don't exceed stage round count
+            const totalRoundsUsed = totalHits + steelCount + (strategyPartiallyCovered * 2);
+            if (totalRoundsUsed > roundCount) {
+                document.getElementById('strategyResults').innerHTML = `
+                    <div class="info-box" style="margin-top: 20px; background: #f8d7da; border-left-color: #dc3545;">
+                        <h3 style="color: #721c24;">⚠️ Round Count Error</h3>
+                        <p style="color: #721c24;"><strong>Total rounds used (${totalRoundsUsed}) exceeds stage round count (${roundCount})</strong></p>
+                        <ul style="color: #721c24; margin-top: 10px;">
+                            <li>No-penalty targets: ${noPenaltyCount} × ${hitsPerTarget} hits = ${totalHits} rounds</li>
+                            <li>Steel targets: ${steelCount} × 1 hit = ${steelCount} rounds</li>
+                            <li>Partially covered targets: ${strategyPartiallyCovered} × 2 hits = ${strategyPartiallyCovered * 2} rounds</li>
+                            <li><strong>Total: ${totalRoundsUsed} rounds</strong></li>
+                        </ul>
+                        <p style="color: #721c24; margin-top: 10px;">Please adjust your inputs so the total rounds don't exceed ${roundCount}.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Validate remaining rounds can be evenly divided into whole targets
+            const remainingRounds = roundCount - totalRoundsUsed;
+            const regularPaperTargets = remainingRounds / hitsPerTarget;
+
+            if (remainingRounds > 0 && !Number.isInteger(regularPaperTargets)) {
+                document.getElementById('strategyResults').innerHTML = `
+                    <div class="info-box" style="margin-top: 20px; background: #f8d7da; border-left-color: #dc3545;">
+                        <h3 style="color: #721c24;">⚠️ Target Configuration Error</h3>
+                        <p style="color: #721c24;"><strong>Remaining rounds don't divide evenly into whole targets</strong></p>
+                        <ul style="color: #721c24; margin-top: 10px;">
+                            <li>Stage round count: ${roundCount} rounds</li>
+                            <li>No-penalty targets: ${noPenaltyCount} × ${hitsPerTarget} hits = ${totalHits} rounds</li>
+                            <li>Steel targets: ${steelCount} × 1 hit = ${steelCount} rounds</li>
+                            <li>Partially covered targets: ${strategyPartiallyCovered} × 2 hits = ${strategyPartiallyCovered * 2} rounds</li>
+                            <li><strong>Remaining for regular paper targets: ${remainingRounds} rounds</strong></li>
+                            <li><strong>Regular paper targets: ${remainingRounds} ÷ ${hitsPerTarget} hits = ${regularPaperTargets.toFixed(1)} targets ❌</strong></li>
+                        </ul>
+                        <p style="color: #721c24; margin-top: 10px;">You can't have ${regularPaperTargets.toFixed(1)} targets - must be a whole number. Adjust your inputs so the remaining rounds are evenly divisible by ${hitsPerTarget}.</p>
+                    </div>
+                `;
+                return;
+            }
 
             let html = `
                 <div style="margin-top: 20px;">
@@ -1082,6 +1138,39 @@
                 `;
             }
 
+            // Add steel target section if applicable
+            if (steelCount > 0) {
+                html += `
+                    <h2 class="section-title" style="margin-top: 20px;">🎯 Steel Target Strategy</h2>
+                    <div class="no-penalty-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 20px; color: white; margin-top: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <div style="font-size: 0.9em; opacity: 0.9;">Steel Targets</div>
+                                <div style="font-size: 1.8em; font-weight: bold;">${steelCount} × 1 hit</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.9em; opacity: 0.9;">Total Points</div>
+                                <div style="font-size: 1.8em; font-weight: bold;">${steelPoints} pts</div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <div style="font-size: 0.9em; opacity: 0.9;">Estimated Time</div>
+                                <div style="font-size: 1.8em; font-weight: bold;">${estimatedSteelTime.toFixed(2)} sec</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.9em; opacity: 0.9;">Time Value</div>
+                                <div style="font-size: 1.8em; font-weight: bold;">${steelTimeValue.toFixed(2)} sec</div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 8px;">💡 Strategy Note</div>
+                            <div style="font-size: 0.95em;">Steel targets require precise hits and are generally slower than paper targets. However, they're worth full 5 points each. Small steel is particularly challenging, while large steel tends to be easier.</div>
+                        </div>
+                    </div>
+                `;
+            }
+
             // Add partially covered targets analysis if applicable
             if (strategyPartiallyCovered > 0 && strategySplitTime > 0) {
                 const cPoints = strategyPowerFactor === 'major' ? 4 : 3;
@@ -1123,17 +1212,17 @@
                 if (totalNetTimeGain > totalNoShootRisk * riskThreshold) {
                     recIcon = '🎯';
                     recTitle = 'Chase A-Zones';
-                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) significantly exceeds no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Worth the calculated risk to aim for A-zones.`;
+                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) significantly exceeds no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Worth the calculated risk to aim for A-zones.<br><br><strong>Why?</strong> Option B only takes ${timeDiff.toFixed(2)}s extra per target (${carefulSplit.toFixed(2)}s splits vs ${(strategySplitTime + optionASlowdown).toFixed(2)}s), but gains ${pointDiff} point${pointDiff === 1 ? '' : 's'} worth ${pointDiffValue.toFixed(2)}s. The points are worth more than the time cost!`;
                     recBg = '#4caf50'; // Green
                 } else if (totalNetTimeGain > 0) {
                     recIcon = '⚖️';
                     recTitle = 'Balanced Approach';
-                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) is positive but modest vs no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Use your confidence level: chase A-zones if feeling sharp, aim center if cautious.`;
+                    recText = `Net time gain (+${totalNetTimeGain.toFixed(2)}s) is positive but modest vs no-shoot risk (${totalNoShootRisk.toFixed(2)}s). Use your confidence level: chase A-zones if feeling sharp, aim center if cautious.<br><br><strong>Why?</strong> Option B takes ${timeDiff.toFixed(2)}s extra per target to gain ${pointDiff} point${pointDiff === 1 ? '' : 's'} worth ${pointDiffValue.toFixed(2)}s. Small net gain (+${netTimeGain.toFixed(2)}s per target), but one no-shoot could wipe it out.`;
                     recBg = '#ff9800'; // Orange
                 } else {
                     recIcon = '🛡️';
                     recTitle = 'Aim Center (Safer)';
-                    recText = `Negative net time gain (${totalNetTimeGain.toFixed(2)}s) means aiming center is both safer AND faster. Clear choice to avoid no-shoot risk.`;
+                    recText = `Negative net time gain (${totalNetTimeGain.toFixed(2)}s) means aiming center is both safer AND faster. Clear choice to avoid no-shoot risk.<br><br><strong>Why?</strong> Option B requires ${timeDiff.toFixed(2)}s extra per target (slowing to ${carefulSplit.toFixed(2)}s splits), but only gains ${pointDiff} point${pointDiff === 1 ? '' : 's'} worth ${pointDiffValue.toFixed(2)}s. You're spending MORE time than the points are worth! Aim center is faster AND safer.`;
                     recBg = '#2196f3'; // Blue
                 }
 
@@ -1297,6 +1386,7 @@
             document.getElementById('stageRoundCount').value = '0';
             document.getElementById('noPenaltyTargets').value = '0';
             document.getElementById('hitsPerTarget').value = '2';
+            document.getElementById('strategySteelTargets').value = '0';
             document.getElementById('strategyPartiallyCovered').value = '0';
             document.getElementById('strategySplitTime').value = '0.20';
             document.getElementById('strategySlowSplitTime').value = '0.50';
