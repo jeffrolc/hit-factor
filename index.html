@@ -482,7 +482,7 @@
                 <h2 class="section-title">Stage Information</h2>
                 <div class="input-group">
                     <label>Stage Max Points (all A-zones/steel)</label>
-                    <input type="number" id="stageMaxPoints" value="0" min="0" oninput="calculateComparison()">
+                    <input type="number" id="stageMaxPoints" value="0" min="0" oninput="syncMaxPoints('comparison'); calculateComparison()">
                 </div>
 
                 <div id="targetTimeBox"></div>
@@ -521,7 +521,7 @@
 
                 <div class="input-group">
                     <label>Stage Round Count</label>
-                    <input type="number" id="stageRoundCount" value="0" min="0" oninput="calculateStrategy()">
+                    <input type="number" id="stageRoundCount" value="0" min="0" oninput="syncRoundCount('strategy'); calculateStrategy()">
                 </div>
 
                 <div class="input-group">
@@ -601,17 +601,17 @@
                 <h2 class="section-title">Stage Information</h2>
                 <div class="input-group">
                     <label>Current High Hit Factor</label>
-                    <input type="number" id="analysisHHF" value="0" min="0" step="0.0001" oninput="calculateAnalysis()">
+                    <input type="number" id="analysisHHF" value="0" min="0" step="0.0001" oninput="syncHitFactor('analysis'); calculateAnalysis()">
                 </div>
 
                 <div class="input-group">
                     <label>Stage Round Count</label>
-                    <input type="number" id="analysisRoundCount" value="0" min="0" oninput="calculateAnalysis()">
+                    <input type="number" id="analysisRoundCount" value="0" min="0" oninput="syncRoundCount('analysis'); calculateAnalysis()">
                 </div>
 
                 <div class="input-group">
                     <label>Stage Max Points (all A-zones/steel)</label>
-                    <input type="number" id="analysisMaxPoints" value="0" min="0" oninput="calculateAnalysis()">
+                    <input type="number" id="analysisMaxPoints" value="0" min="0" oninput="syncMaxPoints('analysis'); calculateAnalysis()">
                 </div>
 
                 <h2 class="section-title">Optional Targets</h2>
@@ -716,6 +716,7 @@
             });
             event.target.classList.add('active');
 
+            syncPowerFactor('comparison', pf);
             calculateComparison();
         }
 
@@ -853,6 +854,7 @@
             });
             event.target.classList.add('active');
 
+            syncPowerFactor('strategy', pf);
             calculateStrategy();
         }
 
@@ -1384,16 +1386,81 @@
             document.getElementById('strategyResults').innerHTML = html;
         }
 
-        // Sync hit factor between Comparison and Strategy tabs
+        // Sync hit factor between Comparison, Strategy, and Analysis tabs
         function syncHitFactor(source) {
+            let hhfValue;
+
+            // Get the value from the source field
             if (source === 'comparison') {
-                // Copy from Comparison to Strategy
-                const compHF = document.getElementById('compHF').value;
-                document.getElementById('highHitFactor').value = compHF;
+                hhfValue = document.getElementById('compHF').value;
             } else if (source === 'strategy') {
-                // Copy from Strategy to Comparison
-                const highHF = document.getElementById('highHitFactor').value;
-                document.getElementById('compHF').value = highHF;
+                hhfValue = document.getElementById('highHitFactor').value;
+            } else if (source === 'analysis') {
+                hhfValue = document.getElementById('analysisHHF').value;
+            }
+
+            // Update all other fields (but not the source)
+            if (source !== 'comparison') {
+                document.getElementById('compHF').value = hhfValue;
+            }
+            if (source !== 'strategy') {
+                document.getElementById('highHitFactor').value = hhfValue;
+            }
+            if (source !== 'analysis') {
+                document.getElementById('analysisHHF').value = hhfValue;
+                calculateAnalysis(); // Recalculate Analysis tab when synced from other tabs
+            }
+        }
+
+        // Sync round count between Strategy and Analysis tabs (Comparison doesn't have round count)
+        function syncRoundCount(source) {
+            let roundCountValue;
+
+            if (source === 'strategy') {
+                roundCountValue = document.getElementById('stageRoundCount').value;
+                document.getElementById('analysisRoundCount').value = roundCountValue;
+                calculateAnalysis(); // Recalculate Analysis tab when synced from Strategy
+            } else if (source === 'analysis') {
+                roundCountValue = document.getElementById('analysisRoundCount').value;
+                document.getElementById('stageRoundCount').value = roundCountValue;
+                calculateStrategy(); // Recalculate Strategy tab when synced from Analysis
+            }
+        }
+
+        // Sync max points between Comparison and Analysis tabs (Strategy doesn't have max points)
+        function syncMaxPoints(source) {
+            let maxPointsValue;
+
+            if (source === 'comparison') {
+                maxPointsValue = document.getElementById('stageMaxPoints').value;
+                document.getElementById('analysisMaxPoints').value = maxPointsValue;
+                calculateAnalysis(); // Recalculate Analysis tab when synced from Comparison
+            } else if (source === 'analysis') {
+                maxPointsValue = document.getElementById('analysisMaxPoints').value;
+                document.getElementById('stageMaxPoints').value = maxPointsValue;
+                calculateComparison(); // Recalculate Comparison tab when synced from Analysis
+            }
+        }
+
+        // Sync power factor between all three tabs
+        function syncPowerFactor(source, pf) {
+            if (source !== 'comparison') {
+                compPowerFactor = pf;
+                document.querySelectorAll('#comparison .pf-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#comparison .pf-button')[pf === 'major' ? 0 : 1].classList.add('active');
+                calculateComparison(); // Recalculate Comparison tab when synced
+            }
+            if (source !== 'strategy') {
+                strategyPowerFactor = pf;
+                document.querySelectorAll('#strategy .pf-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#strategy .pf-button')[pf === 'major' ? 0 : 1].classList.add('active');
+                calculateStrategy(); // Recalculate Strategy tab when synced
+            }
+            if (source !== 'analysis') {
+                analysisPowerFactor = pf;
+                document.querySelectorAll('#analysis .pf-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#analysis .pf-button')[pf === 'major' ? 0 : 1].classList.add('active');
+                calculateAnalysis(); // Recalculate Analysis tab when synced
             }
         }
 
@@ -1433,6 +1500,11 @@
             });
             document.querySelectorAll('#comparison .pf-button')[1].classList.add('active'); // Minor button
 
+            // Sync cleared values to other tabs
+            syncHitFactor('comparison');
+            syncMaxPoints('comparison');
+            syncPowerFactor('comparison', 'minor');
+
             // Recalculate to clear results
             calculateComparison();
         }
@@ -1456,6 +1528,11 @@
             });
             document.querySelectorAll('#strategy .pf-button')[1].classList.add('active'); // Minor button
 
+            // Sync cleared values to other tabs
+            syncHitFactor('strategy');
+            syncRoundCount('strategy');
+            syncPowerFactor('strategy', 'minor');
+
             // Recalculate to clear results
             calculateStrategy();
         }
@@ -1469,6 +1546,7 @@
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
+            syncPowerFactor('analysis', pf);
             calculateAnalysis();
         }
 
@@ -1673,6 +1751,12 @@
                 btn.classList.remove('active');
             });
             document.querySelectorAll('#analysis .pf-button')[1].classList.add('active');
+
+            // Sync cleared values to other tabs
+            syncHitFactor('analysis');
+            syncRoundCount('analysis');
+            syncMaxPoints('analysis');
+            syncPowerFactor('analysis', 'minor');
 
             calculateAnalysis();
         }
