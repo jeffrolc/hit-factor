@@ -951,26 +951,7 @@
                     </div>
                 </div>
 
-                <div class="allowed-drops">
-                    <div class="drop-card drop-card-charlie">
-                        <h3>Reasonable: ${allowedCharlies} Charlie${allowedCharlies !== 1 ? 's' : ''}</h3>
-                        <div class="drop-number">${perfectPoints - (allowedCharlies * charliePointLoss)} pts</div>
-                        <div class="drop-total">Time: < ${((perfectPoints - (allowedCharlies * charliePointLoss)) / hhf).toFixed(2)}s</div>
-                        <div class="drop-total" style="color: ${allowedCharlies > 0 ? '#f44336' : '#4caf50'};">
-                            ${allowedCharlies > 0 ? (perfectTime - ((perfectPoints - (allowedCharlies * charliePointLoss)) / hhf)).toFixed(2) + 's faster needed' : 'Perfect pace'}
-                        </div>
-                    </div>
-                    <div class="drop-card drop-card-delta">
-                        <h3>Reasonable: ${allowedDeltas} Delta${allowedDeltas !== 1 ? 's' : ''}</h3>
-                        <div class="drop-number">${perfectPoints - (allowedDeltas * deltaPointLoss)} pts</div>
-                        <div class="drop-total">Time: < ${((perfectPoints - (allowedDeltas * deltaPointLoss)) / hhf).toFixed(2)}s</div>
-                        <div class="drop-total" style="color: ${allowedDeltas > 0 ? '#f44336' : '#4caf50'};">
-                            ${allowedDeltas > 0 ? (perfectTime - ((perfectPoints - (allowedDeltas * deltaPointLoss)) / hhf)).toFixed(2) + 's faster needed' : 'Perfect pace'}
-                        </div>
-                    </div>
-                </div>
-
-                <h2 class="section-title" style="margin-top: 25px;">Detailed Accuracy/Speed Breakdown</h2>
+                <h2 class="section-title" style="margin-top: 25px;">Accuracy/Speed Breakdown</h2>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                     <div style="font-size: 0.9em; color: #888; margin-bottom: 10px;">
                         Shows how much faster you need to shoot to compensate for accuracy drops
